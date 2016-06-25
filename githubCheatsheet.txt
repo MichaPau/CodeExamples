@@ -1,1 +1,14 @@
-Github Cheatsheet (only substancial things)
+Github cheatsheet:
+
+concepts:
+repo, commit (hash), branch, merge, fork, pull request, clone
+
+pull request: bring in the changes from another branch
+
+issus: 
+reference with #issueNumber in the commit title.
+add 'fixes #issueNumber' in the commit title to automatically close the issue
+add commit hash in issue comment to link directly to the changes.
+
+clone:
+commandline action - clone a github repo to a local folder: git clone git-url

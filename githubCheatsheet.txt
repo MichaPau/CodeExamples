@@ -1,8 +1,9 @@
 Github cheatsheet: (Git and Github according to Daniel Shiffman)
-(https://www.youtube.com/watch?v=BCQHnlnPusY&list=PLRqwX-V7Uu6ZF9C0YMKuns9sLDzK6zoiV&index=1)
 
 concepts:
 repo, commit (hash), branch, merge, fork, pull request, clone
+
+staging:
 
 pull request: bring in the changes from another branch
 
@@ -35,7 +36,21 @@ push: sending to github
 	
 	e.g. git push origen master
 
-	pull: getting from github
+pull: getting from github
+	e.g. git pull origin master
+	
 remote:
 	arguments:
 		-v verbose
+		add origin "url" (after init)
+		
+init:
+	e.g. git init
+	
+add:
+	e.g. 
+	git add -filename
+	git add . (add all)
+	
+Pages:
+	add a new branch with name "gh-pages" - creates everything

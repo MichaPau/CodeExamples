@@ -1,4 +1,4 @@
-Github cheatsheet:
+Github cheatsheet: (Git and Github according to Daniel Shiffman)
 
 concepts:
 repo, commit (hash), branch, merge, fork, pull request, clone
@@ -12,3 +12,29 @@ add commit hash in issue comment to link directly to the changes.
 
 clone:
 commandline action - clone a github repo to a local folder: git clone git-url
+
+status:
+commit:
+	arguments:
+		-a: commit all
+		-m: message + "msg"
+		
+	e.g. git commit -a -m "my commit message"
+		
+log:
+	arguments:
+		-[number of last comits]
+	
+	e.g. git log -2
+		
+push: sending to github
+	arguments:
+		origen: "url"
+		branch: "master"
+	
+	e.g. git push origen master
+
+	pull: getting from github
+remote:
+	arguments:
+		-v verbose

@@ -31,7 +31,7 @@ log:
 		
 push: sending to github
 	arguments:
-		origen: "url"
+		origin: "url"
 		branch: "master"
 	
 	e.g. git push origen master
@@ -54,3 +54,10 @@ add:
 	
 Pages:
 	add a new branch with name "gh-pages" - creates everything
+	
+From local to github:
+	create the repo on github
+	git init (inside the local folder)
+	git add . (adds all to the statging area)
+	git remote add origin [url]
+	git push origin master

@@ -1,1 +1,3 @@
-Assingnment 03 from the Nature of Code - Kadenze Mook
+Steering behaviours
+
+Assignment 03 from the The Nature of Code Mook course on Kadenze 

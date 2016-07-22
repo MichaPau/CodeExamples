@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Fireflies</title>
+    <style>
+    	html, body {
+    		height: 100%;
+    		padding: 0;
+    		margin: 0;
+    	}
+    	body {
+    		display: flex;
+    		flex-direction: column;
+    		justify-content: flex-start;
+    		align-items: center;
+    		margin-top: 1em;
+    	}
+    	#guiContainer {
+    		display: flex;
+    		flex-direction: column;
+    		justify-content: flex-start;
+    		align-items: center;
+    	}
+    	a {
+    		text-decoration: none;
+    		color: #18515E;
+    	}
+    	h1 {
+    		font-size: 1em;
+    		margin: 0;
+    	}
+    	/*body {padding: 0; margin: 0;} canvas {vertical-align: top;} */
+    </style>
+    <script src="libraries/p5.js" type="text/javascript"></script>
+
+    <script src="libraries/p5.dom.js" type="text/javascript"></script>
+    <script src="libraries/p5.sound.js" type="text/javascript"></script>
+
+    <script src="sketch.js" type="text/javascript"></script>
+    <script src="firefly.js" type="text/javascript"></script>
+    <script src="windForce.js" type="text/javascript"></script>
+
+    
+  </head>
+  <body>
+  	<h1>Loosely based on the <a href="https://en.wikipedia.org/wiki/Firefly_algorithm">Firefly algorithm</a></h1>
+  	<div id="canvasContainer"></div>
+  	<div id="guiContainer">
+  		<div id="radioContainer"></div>
+  	</div>
+  	<div>Click drag to make them flee the cursor.</div>
+  </body>
+</html>

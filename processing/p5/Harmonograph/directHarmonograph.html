@@ -1,0 +1,149 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Harmonograph Test with sound</title>
+	<!-- only need this localy - in codecircle include the lib-->
+	<!--<script src="../js/maxiLib.js"></script>-->
+	<style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    canvas {
+      background: rgb(7, 7, 7);
+      border: 1px dashed rgb(51, 51, 51);
+      margin-bottom: 1em;
+    }
+    .bodyClass {
+      height: 100%;
+      display: flex;
+      margin-left: 2em;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      color: #FFF;
+      margin: 0;
+      padding: 0 0 0 2em;
+      background-color: #000;
+    }
+    </style>
+    <script src="js/maxiLib.js"></script>
+  </head>
+  <body>
+      <div class="bodyClass">
+        <canvas id="canvas" width="800" height="600"></canvas>
+      	<div id="guiContainer">
+      		<button onclick="togglePlay()">Toggle Play</button>
+      	</div>
+      </div>
+  <script>
+    var f1 = 3;
+    var f2 = 1;
+    var f3 = 0;
+    var f4 = 0;
+    var p1 = 1;
+    var p2 = 5;
+    var p3 = 1;
+    var p4 = 10;
+    var a1 = 100;
+    var a2 = 100;
+    var a3 = 100;
+    var a4 = 100;
+    var d1 = 0.0;
+    var d2 = 0.007;
+    var d3 = 0.007;
+    var d4 = 0.001;
+
+    maxiAudio.init();
+    maxiAudio.setBufferSize(1024);
+    maxiAudio.outputIsArray(true, 2);
+
+    var output = 0;
+    var drawOutput = new Array(1024);
+    var counter = 0;
+    maxiAudio.play = function () {
+      if (playing) {
+        setDrawOutput(output);
+      } else {
+        output = 0;
+      }
+
+      maxiAudio.output[0] = o;
+  		maxiAudio.output[1] = o;
+    }
+
+    function togglePlay() {
+  		playing = !playing;
+  	}
+
+
+    function setDrawOutput(output) {
+      counter++;
+      drawOutput[counter%1024] = output;
+    }
+
+    //canvas stuff
+    var c = document.getElementById("canvas");
+    var ctx = c.getContext('2d');
+
+    var cWidth = c.width;
+    var cHeight = c.height;
+    ctx.translate(cWidth/2, cHeight/2);
+
+
+
+
+    function draw() {
+
+      //var cValue = Math.round(cutoff/10);
+      //var colorStr = "rgb("+cValue+","+cValue+","+cValue+")";
+      //ctx.strokeStyle = colorStr;
+      ctx.strokeStyle = "rgb(255, 255, 255)";
+      ctx.clear(true);
+
+      ctx.beginPath();
+      for(var t=1; t < 175; t+=0.01) {
+
+        //var x = Math.pow(Math.E, (d1*t*-1))*Math.sin(t*f1+p1);
+        //var y = Math.pow(Math.E, (d3*t*-1))*Math.sin(t*f3+p3);
+        //https://en.wikipedia.org/wiki/Harmonograph
+        var x = a1*(Math.pow(Math.E, (d1*t*-1))*Math.cos(t*f1+p1)) + a2*(Math.pow(Math.E, (d2*t*-1))*Math.cos(t*f2+p2));
+        var y = a3*(Math.pow(Math.E, (d3*t*-1))*Math.sin(t*f3+p3)) + a4*(Math.pow(Math.E, (d4*t*-1))*Math.cos(t*f4+p4));
+
+        //move paper - is this right?
+        x += a1*(Math.pow(Math.E, (d1*t*-1))*Math.cos(t*f1+p1)) + a2*(Math.pow(Math.E, (d2*t*-1))*Math.cos(t*f2+p2));
+        y += a1*(Math.pow(Math.E, (d1*t*-1))*Math.cos(t*f1+p1)) + a2*(Math.pow(Math.E, (d2*t*-1))*Math.cos(t*f2+p2));
+
+        if(t == 1) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+
+      ctx.closePath();
+      ctx.stroke();
+
+      window.requestAnimationFrame(draw);
+    }
+
+    //http://stackoverflow.com/a/9722502/1456318
+    CanvasRenderingContext2D.prototype.clear =
+    CanvasRenderingContext2D.prototype.clear || function (preserveTransform) {
+      if (preserveTransform) {
+        this.save();
+        this.setTransform(1, 0, 0, 1, 0, 0);
+      }
+
+      this.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+      if (preserveTransform) {
+        this.restore();
+      }
+  };
+
+  //setInterval(draw, 15);
+  window.requestAnimationFrame(draw);
+  </script>

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Harmonograph 0.1</title>
+
+    <style>
+      html {
+        width: 100%;
+        height: 100%;
+      }
+      body {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        background: #121212;
+      }
+      canvas {
+        margin-top: 1em;
+        background: #000;
+        border: 1px dashed rgb(51, 51, 51);
+      }
+    </style>
+    <script src="js/noise2.js"></script>
+    <script src="js/maxiLib.js"></script>
+  </head>
+  <body>
+    <canvas id="canvas" width="700" height="500"></canvas>
+    <button id="resetNoise_btn" onclick="resetNoiseSeed();">Reset noise seed</button>
+    <script>
+      //util
+      var map = function(n, start1, stop1, start2, stop2) {
+        return ((n-start1)/(stop1-start1))*(stop2-start2)+start2;
+      };
+      //utils
+      var noiseV = Math.round(map(Math.random(), 0, 1, 0, 2000));
+      noise.seed(noiseV);
+      //change the number of drawing in some way
+      var f1 = 1; //x-axis
+      var f2 = 1; //y-axis
+
+      var f3 = 1;
+      var f4 = 1;
+      //visually it changes the perspective - but what does it realy?
+
+      var p1 = 1;
+      var p2 = 1;
+      var p3 = 1;
+      var p4 = 1;
+
+      //amplitude - this one is clear
+      var a1 = 100;
+      var a2 = 100;
+      var a3 = 100;
+      var a4 = 100;
+
+      //dumping - this one as well
+      var d1 = 0;
+      var d2 = 0;
+      var d3 = 0;
+      var d4 = 0;
+
+      var counter = 0;
+      //maxiLib
+      var maxiAudio = new maximJs.maxiAudio();
+
+      var clock = new maximJs.maxiClock();
+      var maxiSample = new maximJs.maxiSample();
+      var maxiSample2 = new maximJs.maxiSample();
+
+      var osc1 = new maximJs.maxiOsc();
+    	var osc2 = new maximJs.maxiOsc();
+      var osc3 = new maximJs.maxiOsc();
+      var osc4 = new maximJs.maxiOsc();
+
+      var osc5 = new maximJs.maxiOsc();
+
+      var clockTicks = 6;
+      clock.setTicksPerBeat(clockTicks);
+    	clock.setTempo(30);
+
+
+
+      maxiAudio.init();
+    	maxiAudio.setBufferSize(1024);
+      //maxiAudio.loadSample("assets/sounds/ruler-vibration.wav", maxiSample);
+      maxiAudio.loadSample("assets/sounds/snare_01.wav", maxiSample);
+      //maxiAudio.loadSample("assets/sounds/timbal_01.wav", maxiSample2);
+      maxiAudio.loadSample("assets/sounds/snare_02.wav", maxiSample2);
+    	maxiAudio.outputIsArray(true, 2);
+
+      var output = 0;
+      var out1 = 0;
+      var out2 = 0;
+      var out3 = 0;
+      var out4 = 0;
+      var sOut = 0;
+      var sOut2 = 0;
+      var clockPlayhead = 0;
+      var f3Ratio = 1;
+      var voidFlag = false;
+      var sawManip = 30;
+
+      maxiAudio.play = function () {
+
+        if (maxiSample.isReady) {
+          clock.ticker();
+
+          if(clock.tick) {
+            if(clockPlayhead%clockTicks === 0) {
+              maxiSample.trigger();
+              if(voidFlag)
+                voidFlag = false;
+
+            }
+            if(clockPlayhead%clockTicks === 3 && Math.random() > 0.6) {
+              console.log("trigger");
+              if(Math.random() > 0.9) {
+                voidFlag = true;
+              }
+              maxiSample2.trigger();
+
+            }
+            if(clockPlayhead%clockTicks === 4 && Math.random() > 0.6) {
+              console.log("trigger");
+              maxiSample2.trigger();
+
+            }
+            if(clockPlayhead%clockTicks === 5 && Math.random() > 0.6) {
+              voidFlag = true;
+              if(Math.random() > 0.5) {
+                sawManip = map(Math.random(), 0, 1, 1, 50);
+              }
+
+            }
+
+            if(clockPlayhead%clockTicks === 3) {
+              f3Ratio = Math.round(map(Math.random(), 0, 1, -2, 2));
+              //console.log(f3Ratio);
+            }
+            clockPlayhead++;
+          }
+          if(d1 > 0) {
+            out1 = osc5.sawn(f1*100);
+          } else {
+            out1 = osc1.sinewave(f1*100);
+          }
+
+          sOut = maxiSample.playOnce(1)*5;
+          sOut2 = maxiSample2.playOnce()*2;
+          //f1 += sOut;
+          //f2 += sOut;
+          //f3 += sOut;
+          //f4 += sOut;
+          out2 = osc2.sawn((f2*100)*osc5.sinewave(sawManip));
+          out3 = osc3.sinewave(f3*100);
+          out4 = osc4.sinewave(f4*100);
+
+          output = (out1 + out2*0.3 + out3 + out4 + sOut + sOut2)*0.25;
+
+          maxiAudio.output[0] = output;
+          maxiAudio.output[1] = output;
+        }
+      }
+      //canvas stuff
+      var c = document.getElementById("canvas");
+      var ctx = c.getContext('2d');
+
+      var cWidth = c.width;
+      var cHeight = c.height;
+      ctx.translate(cWidth/2, cHeight/2);
+      ctx.strokeStyle = "#FFFFFF";
+
+
+      function resetNoiseSeed() {
+        console.log(noiseV);
+        noiseV = Math.round(map(Math.random(), 0, 1, 0, 2000));
+        noise.seed(noiseV);
+        console.log(noiseV);
+      }
+      function draw() {
+        var value = map(noise.simplex2(noiseV, 0), 0, 1, 0.5, 4);
+        noiseV += 0.0001;
+
+        if(!voidFlag) {
+        f1 = value+sOut;
+        f2 = value*0.5;
+        //f1 = f2 = counter/10;
+        f3 = value*f3Ratio+sOut2;
+        f4 = map(noise.simplex2(noiseV, 0), 0, 1, 0.1, 2);
+        } else {
+          f1 = f2 = f3 = f4 = 0;
+        }
+        //f4 = f3*0.5;
+        p1 = p2 = counter;
+        p3 = p4 = counter*-1;
+        ctx.clear(true);
+        //console.log(f3);
+        var cValue = Math.abs(Math.round(map(output, -1, 1, -255, 255)));
+        var cStr = "rgb("+cValue+","+cValue+","+cValue+")";
+        console.log(cStr);
+        ctx.strokeStyle = cStr;
+        ctx.beginPath();
+        for(var t=1; t < 150; t+=0.01) {
+
+
+          //https://en.wikipedia.org/wiki/Harmonograph
+          var x = a1*(Math.pow(Math.E, (d1*t*-1))*Math.sin(t*f1+p1)) + a2*(Math.pow(Math.E, (d2*t*-1))*Math.sin(t*f2+p2));
+          var y = a3*(Math.pow(Math.E, (d3*t*-1))*Math.cos(t*f3+p3)) + a4*(Math.pow(Math.E, (d4*t*-1))*Math.cos(t*f4+p4));
+
+          //move paper - is this right?
+          //x += a1*(Math.pow(Math.E, (d1*t*-1))*Math.cos(t*f1+p1)) + a2*(Math.pow(Math.E, (d2*t*-1))*Math.cos(t*f2+p2));
+          //y += a1*(Math.pow(Math.E, (d1*t*-1))*Math.cos(t*f1+p1)) + a2*(Math.pow(Math.E, (d2*t*-1))*Math.cos(t*f2+p2));
+          //x *= 100;
+          //y *= 100;
+          if(t == 1) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+
+        //ctx.closePath();
+
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgb(250, 250, 250)';
+        ctx.strokeText(f1.toFixed(3)+":"+f2.toFixed(3)+":"+f3.toFixed(3)+":"+f4.toFixed(3), -cWidth/2 + 10, cHeight/2 - 30);
+        ctx.strokeText(sawManip.toFixed(3), cWidth/2 - 50, cHeight/2 - 30);
+
+        counter += 0.005;
+        window.requestAnimationFrame(draw);
+      }
+
+      //http://stackoverflow.com/a/9722502/1456318
+      CanvasRenderingContext2D.prototype.clear =
+      CanvasRenderingContext2D.prototype.clear || function (preserveTransform) {
+        if (preserveTransform) {
+          this.save();
+          this.setTransform(1, 0, 0, 1, 0, 0);
+        }
+
+        this.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        if (preserveTransform) {
+          this.restore();
+        }
+    };
+    window.requestAnimationFrame(draw);
+    </script>
+  </body>
+</html>

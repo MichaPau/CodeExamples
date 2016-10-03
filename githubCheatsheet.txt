@@ -34,7 +34,7 @@ push: sending to github
 		origin: "url"
 		branch: "master"
 	
-	e.g. git push origen master
+	e.g. git push origin master
 
 pull: getting from github
 	e.g. git pull origin master

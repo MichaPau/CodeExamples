@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Seesion 09 - Veronoi construction</title>
+
+    <script src="js/veronoi.js" type="text/javascript"></script>
+    <script src="js/maxiLib.js" type="text/javascript"></script>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {padding: 0; margin: 0;}
+      canvas {
+        vertical-align: top;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+
+  <body>
+    <canvas id="vCanvas" width="600", height="600"></canvas>
+    <script>
+    var map = function(n, start1, stop1, start2, stop2) {
+      return ((n-start1)/(stop1-start1))*(stop2-start2)+start2;
+    };
+
+    var c = document.getElementById('vCanvas');
+    //full browser window
+    c.width = document.body.clientWidth;
+    c.height = document.body.clientHeight;
+    var ctx = c.getContext('2d');
+
+
+    //I use a library for the veronoi calculation
+    //https://github.com/gorhill/Javascript-Voronoi
+    var voronoi = new Voronoi();
+    var bbox = {xl: 0, xr: c.width, yt: 0, yb: c.height};
+    var sites = [];
+
+    //create a second array for where the points want to go
+    var sitesDest = [];
+
+    //128 cells seems a good compromise
+    for(var i = 0; i < 128; i++) {
+      var tObj = {};
+      tObj.x = Math.floor((Math.random() * c.width) + 1);
+      tObj.y = Math.floor((Math.random() * c.height) + 1);
+      sites.push(tObj);
+      sitesDest.push(tObj);
+    }
+
+    //maxiLib stuff
+    var maxiAudio = new maximJs.maxiAudio();
+    var maxiSample = new maximJs.maxiSample();
+    var clock = new maximJs.maxiClock();
+    var speedFilter = new maximJs.maxiFilter();
+
+    var clockTicks = 1;
+    clock.setTicksPerBeat(clockTicks);
+    clock.setTempo(10);
+
+    var fft = new maximJs.maxiFFT();
+    var fftSize = 1024;
+
+    maxiAudio.init();
+    maxiAudio.setBufferSize(1024);
+
+    //perhaps it's cheating - but I've created the sample with chucK and exported a wav file
+    //random pitches with reverb which sound kinda jazzy played with normal speed
+    //It would be cool to do the same with only maxiLib - but hence I am always late with the assignment I just use this
+    //the chucK code:
+    /*
+    Impulse imp => ResonZ filt => NRev rev => dac;
+
+    0.04 => rev.mix;
+    100.0 => filt.Q => filt.gain;
+
+    while(1) {
+      Std.mtof(Math.random2(40, 80)) => filt.freq;
+      1.0 => imp.next;
+      100::ms => now;
+    }
+    */
+    maxiAudio.loadSample("sound/WOWExample.wav", maxiSample);
+    maxiAudio.outputIsArray(true, 2);
+
+    //init vars
+    var output = 0;
+    var sOut = 0;
+    var clockPlayhead = 0;
+    var sampleSpeed = 0.8;
+    fft.setup(fftSize, 1024, 256);
+    var startTime = performance.now();
+    var actTime = performance.now();
+    var newSpeed = sampleSpeed;
+    var maxSampleSpeed = 1.2;
+    var minSampleSpeed = -1.2;
+    maxiAudio.play = function () {
+
+      if (maxiSample.isReady) {
+        clock.ticker();
+        if(clock.tick) {
+          actTime = performance.now();
+          if(actTime - startTime > 7000) {
+              //change the sample speed randomly
+              newSpeed = map(Math.random(), 0, 1, -1.2, 1.2);
+          }
+          //and create new destinations for each site
+          for(var i = 0; i < 72; i++) {
+            var tObj = {};
+            tObj.x = Math.floor((Math.random() * c.width) + 1);
+            tObj.y = Math.floor((Math.random() * c.height) + 1);
+            sitesDest[i] = tObj;
+
+          }
+        }
+
+        //you have to pass by the lopass door my dear sampleSpeed
+        sampleSpeed = speedFilter.lopass(newSpeed, 0.0001);
+
+        //play and process it
+        sOut = maxiSample.play(sampleSpeed);
+        if(fft.process(sOut)) {
+          fft.magsToDB();
+        }
+      }
+
+      //you have 3 minutes - show what you can
+      if(actTime - startTime < 60000*3) {
+        output = sOut * 5;
+      } else {
+        output = 0;
+        sampleSpeed = 0;
+      }
+      //output = sOut * 2;
+      maxiAudio.output[0] = output;
+      maxiAudio.output[1] = output;
+    }
+
+    //veronoi stuff
+    var diagram = voronoi.compute(sites, bbox);
+    render2();
+
+    //seek to new position according to the sampleSpeed
+    function seek(pos, target) {
+      var ret = {};
+      var deX = target.x - pos.x;
+      var deY = target.y - pos.y;
+      var mag = Math.sqrt(deX*deX + deY*deY);
+
+      if(mag != 0) {
+        var divX = deX/mag;
+        var divY = deY/mag;
+
+        divX *= Math.abs(this.sampleSpeed*2);
+        divY *= Math.abs(this.sampleSpeed*2);
+        //steering ?? - perhaps later
+        ret.x = pos.x + divX;
+        ret.y = pos.y + divY;
+
+        return ret;
+      } else {
+        return pos;
+      }
+    }
+    function render2() {
+
+      var overal = 0;
+      for(var i = 0; i < 512; i++) {
+        overal += fft.getMagnitude(i);
+      }
+      var meanValue = (overal/512)*60;
+      for(var si = 0; si < this.sites.length; si++) {
+        var m;
+        //pseudo random flicker walk
+        if(Math.random() > 0.5) {
+          m = 2;
+        } else {
+          m = -2;
+        }
+        var newPos = this.seek({x:this.sites[si].x, y:this.sites[si].y}, {x:this.sitesDest[si].x, y:this.sitesDest[si].y});
+
+        this.sites[si].x = newPos.x;
+        this.sites[si].y = newPos.y;
+
+        this.sites[si].x += meanValue * m * this.sampleSpeed;
+        this.sites[si].y += meanValue * m * this.sampleSpeed;
+      }
+      //don't worry my dear memory
+      voronoi.recycle(diagram);
+      //compute the veronoi cells
+      diagram = voronoi.compute(this.sites, this.bbox);
+
+      //change some drawing styles - the sampleSpeed contols nearly all
+      var backStyle, drawStyle, cellStyle;
+      if(this.sampleSpeed > 0) {
+        backStyle = "rgba(255, 255, 255, 0.1)";
+        drawStyle = "rgba(255, 255, 255, 1)";
+        cellStyle = "rgba(0, 0, 0, "+map(sampleSpeed, 0, maxSampleSpeed, 0.0, 1.0)+")";
+      } else if (this.sampleSpeed == 0) {
+        backStyle = "rgba(0, 0, 0, 0.05)";
+        drawStyle = "rgba(0, 0, 0, 0)";
+        cellStyle = "rgba(0, 0, 0, 0)";
+      } else {
+        backStyle = "rgba(0, 0, 0, 0.1)";
+        drawStyle = "rgba(0, 0, 0, 1)";
+        cellStyle = "rgba(255, 255, 255, "+map(sampleSpeed, 0, minSampleSpeed, 0.0, 1.0)+")";
+      }
+      ctx.rect(0, 0, c.width, c.height);
+      ctx.fillStyle = backStyle;
+      ctx.fill();
+
+      for(var j = 0; j < this.sites.length; j++) {
+        renderCell(j, cellStyle, drawStyle);
+      }
+
+      window.requestAnimationFrame(render2);
+    }
+  //  function render
+    function renderCell(id, fillStyle, strokeStyle) {
+  		if (id === undefined) {return;}
+  		if (!this.diagram) {return;}
+  		var cell = this.diagram.cells[id];
+  		if (!cell) {return;}
+
+  		ctx.beginPath();
+  		var halfedges = cell.halfedges;
+  		var nHalfedges = halfedges.length;
+      if (!nHalfedges) {return;}
+  		var	v = halfedges[0].getStartpoint();
+  		ctx.moveTo(v.x,v.y);
+  		for (var iHalfedge=0; iHalfedge<nHalfedges; iHalfedge++) {
+  			v = halfedges[iHalfedge].getEndpoint();
+  			ctx.lineTo(v.x,v.y);
+  			}
+  		ctx.fillStyle = fillStyle;
+  		ctx.strokeStyle = strokeStyle;
+  		ctx.fill();
+  		ctx.stroke();
+  		// site
+  		v = cell.site;
+  		ctx.fillStyle = strokeStyle;
+  		ctx.beginPath();
+  		ctx.rect(v.x - 3, v.y - 3, 6, 6);
+  		ctx.fill();
+		}
+
+
+    </script>
+  </body>
+</html>
